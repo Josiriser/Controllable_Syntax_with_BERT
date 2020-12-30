@@ -1,0 +1,12 @@
+__pycache__/*
+.ipynb_checkpoints/*
+.model_holder/*
+data_feature/*
+dataset/*
+model/*
+result/*
+trained_model/*
+all_pos_list.txt
+test.py
+
+
