@@ -3,6 +3,7 @@ __pycache__/*
 .model_holder/*
 data_feature/*
 dataset/*
+loss/*
 model/*
 result/*
 trained_model/*
