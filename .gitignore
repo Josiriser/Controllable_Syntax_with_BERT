@@ -7,6 +7,7 @@ loss/*
 model/*
 result/*
 trained_model/*
+transformers/*
 all_pos_list.txt
 test.py
 
