@@ -25,7 +25,7 @@ class POS_Model(nn.Module):
         model_embedding = self.model.bert.embeddings
         # pos_ids 是詞性 不是position
 
-        inputs_embeds = model_embedding(input_ids=input_ids,token_type_ids=token_type_ids,position_ids=pos_ids)
+        inputs_embeds = model_embedding(input_ids=input_ids,token_type_ids=pos_ids)
   
         
         # return 0
