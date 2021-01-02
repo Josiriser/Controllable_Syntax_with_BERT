@@ -10,11 +10,53 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import TensorDataset,DataLoader
 from transformers import AutoModel,AutoConfig,AutoTokenizer,AdamW,BertForMaskedLM,AutoModelForMaskedLM
 from transformers.modeling_bert import BertOnlyMLMHead,MaskedLMOutput
+import transformers.configuration_bert
+##
+class Bert_config(transformers.configuration_bert.BertConfig):
+    def __init__(
+        self,
+        vocab_size=30522,
+        hidden_size=768,
+        num_hidden_layers=12,
+        num_attention_heads=12,
+        intermediate_size=3072,
+        hidden_act="gelu",
+        hidden_dropout_prob=0.1,
+        attention_probs_dropout_prob=0.1,
+        max_position_embeddings=512,
+        type_vocab_size=51,
+        initializer_range=0.02,
+        layer_norm_eps=1e-12,
+        pad_token_id=0,
+        gradient_checkpointing=False,
+        position_embedding_type="absolute",
+        use_cache=True,
+        **kwargs
+    ):
+        super().__init__(pad_token_id=pad_token_id, **kwargs)
 
+        self.vocab_size = vocab_size
+        self.hidden_size = hidden_size
+        self.num_hidden_layers = num_hidden_layers
+        self.num_attention_heads = num_attention_heads
+        self.hidden_act = hidden_act
+        self.intermediate_size = intermediate_size
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.attention_probs_dropout_prob = attention_probs_dropout_prob
+        self.max_position_embeddings = max_position_embeddings
+        self.type_vocab_size = type_vocab_size
+        self.initializer_range = initializer_range
+        self.layer_norm_eps = layer_norm_eps
+        self.gradient_checkpointing = gradient_checkpointing
+        self.position_embedding_type = position_embedding_type
+        self.use_cache = use_cache
+
+##
 class POS_Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.config = AutoConfig.from_pretrained('bert-base-uncased')
+        # self.config = AutoConfig.from_pretrained('bert-base-uncased')
+        self.config = Bert_config()
         self.model = AutoModelForMaskedLM.from_pretrained('bert-base-uncased')
         # self.pos_embs = nn.Embedding(51, self.config.hidden_size)
         self.mask_predict = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias=False)
@@ -25,13 +67,14 @@ class POS_Model(nn.Module):
         model_embedding = self.model.bert.embeddings
         # pos_ids 是詞性 不是position
 
+        # inputs_embeds = model_embedding(input_ids=input_ids,token_type_ids=token_type_ids
+        #                             ,position_ids=pos_ids)
         inputs_embeds = model_embedding(input_ids=input_ids,token_type_ids=pos_ids)
-  
         
         # return 0
         
-        outputs = self.model(output_attentions=True,output_hidden_states=True,inputs_embeds=inputs_embeds 
-                            ,labels=labels,attention_mask=attention_mask)
+        outputs = self.model(output_attentions=True,output_hidden_states=True,
+        inputs_embeds=inputs_embeds,labels=labels,attention_mask=attention_mask)
       
         # # loss
         
