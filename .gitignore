@@ -4,6 +4,7 @@ __pycache__/*
 data_feature/*
 dataset/*
 loss/*
+mingda_chen_dataset/*
 model/*
 result/*
 trained_model/*
