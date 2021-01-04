@@ -126,6 +126,7 @@ def maskLM_embedding(input_sentence):
                 input_maskLM.append(-100)
                 SEP_flag=True
     return input_maskLM
+
 def extroplate_mask(syntactic_sentence_list):
     process_syntactic_sentence_list=[]
     process_syntactic_sentence_list.append("[MASK]")
@@ -135,14 +136,12 @@ def extroplate_mask(syntactic_sentence_list):
     
     return process_syntactic_sentence_list
 
-
-
 def main():
 
     # model select
     # 0 : base
     # 1 : pos
-    model_num = 1
+    model_num = 0
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     device = torch.device("cuda")
 
