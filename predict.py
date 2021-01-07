@@ -10,6 +10,7 @@ from data_preprocess_pos import pos_match
 from transformers import BertConfig, BertForMaskedLM, BertTokenizer
 from transformers import AutoModelForMaskedLM,AutoConfig
 from train_pos import POS_Model
+from tools import segment_embedding,attention_embedding,output_evaluate
 tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
 nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
 pos_encoder_dict=convert_tuple_to_dict(nlp.get_pipe("tagger").labels)
@@ -70,28 +71,28 @@ def select_model(model_num = 0):
         model = torch.load("trained_model/pos_repalce_segment_small_model/0/2020-12-29_07:20:41.bin")
     return model
 
-def segment_embedding(input_sentence):
-    #segment_embedding
-    SEP_flag=False
-    sep_token="[SEP]"
-    input_segment=[]
-    for token in input_sentence:  
-        if (SEP_flag):
-            input_segment.append(1)
-        else:
-            if token != sep_token:
-                input_segment.append(0) 
-            elif token==sep_token :
-                SEP_flag=True
-                input_segment.append(0) 
-    return input_segment
+# def segment_embedding(input_sentence):
+#     #segment_embedding
+#     SEP_flag=False
+#     sep_token="[SEP]"
+#     input_segment=[]
+#     for token in input_sentence:  
+#         if (SEP_flag):
+#             input_segment.append(1)
+#         else:
+#             if token != sep_token:
+#                 input_segment.append(0) 
+#             elif token==sep_token :
+#                 SEP_flag=True
+#                 input_segment.append(0) 
+#     return input_segment
 
-def attention_embedding(input_sentence):
-    input_attention=[]
+# def attention_embedding(input_sentence):
+#     input_attention=[]
 
-    input_attention.extend([1]*len(input_sentence))
+#     input_attention.extend([1]*len(input_sentence))
 
-    return input_attention
+#     return input_attention
 
 def pos_embedding(ori_semantic_sentence,ori_syntactic_sentence,input_syntactic):
     input_pos = []
@@ -151,7 +152,10 @@ def main():
     model.eval()
 
     output_txt=""
-    for_eva_bleu_txt=""
+    eval_dict={}
+    semantic=[]
+    syntactic=[]
+    ref=[]
     count=0
     for index,ori_semantic_sentence in enumerate(tqdm(ori_semantic_list)):
         input_sentence=[]
@@ -233,32 +237,34 @@ def main():
             # print(syntactic_iteration)
             input_sentence.clear()
         output_sentence=syntactic_iteration
-        print(input_semantic)
-        print(input_syntactic)
-        print(ori_syntactic_list[index])
-        print(output_sentence)
-        
+        # print(input_semantic)
+        # print(input_syntactic)
+        # print(ori_syntactic_list[index])
+        # print(output_sentence)
         count+=1
         input_semantic_clean=extract_sentence_from_list(input_semantic)
         input_syntactic_clean=extract_sentence_from_list(input_syntactic)
         output_sentence_clean=extract_sentence_from_list(output_sentence)
-        output_txt=output_txt+"input_semantic  : "+input_semantic_clean+"\n"
-        output_txt=output_txt+"ori_syntactic   : "+ori_syntactic_list[index]+"\n"
-        output_txt=output_txt+"input_syntactic : "+input_syntactic_clean+"\n"
-        output_txt=output_txt+"output_sentence : "+output_sentence_clean+"\n"
-        output_txt=output_txt+"\n\n"
-        for_eva_bleu_txt=for_eva_bleu_txt+ori_syntactic_list[index]+"|||"+output_sentence_clean+"\n"
-        # print(count)
-        if count % 50 ==0:
-            output_file_path=os.path.join("result","output_pos_small.txt")
-            with open(output_file_path,'a',encoding='utf-8') as f:
-                f.write(output_txt)
-            output_txt=""
-            eva_bleu_file_path=os.path.join("result","eva_bleu_pos_small.txt")
-            with open(eva_bleu_file_path,'a',encoding='utf-8') as f:
-                f.write(for_eva_bleu_txt)
-            for_eva_bleu_txt=""
-            break
+        # output_txt=output_txt+"input_semantic  : "+input_semantic_clean+"\n"
+        # output_txt=output_txt+"ori_syntactic   : "+ori_syntactic_list[index]+"\n"
+        # output_txt=output_txt+"input_syntactic : "+input_syntactic_clean+"\n"
+        # output_txt=output_txt+"output_sentence : "+output_sentence_clean+"\n"
+        # output_txt=output_txt+"\n\n"
+
+        semantic.append(ori_semantic_sentence)
+        syntactic.append(ori_syntactic_list[index])
+        ref.append(output_sentence_clean)
+        
+        # if count % 50 ==0:
+            
+        #     output_file_path=os.path.join("result","output_pos_small.txt")
+        #     with open(output_file_path,'a',encoding='utf-8') as f:
+        #         f.write(output_txt)
+        #     output_txt=""
+    #　產出evaluate file
+    assert len(semantic)==len(syntactic)
+    assert len(semantic)==len(ref)
+    output_evaluate(semantic,syntactic,ref)
 
 
 

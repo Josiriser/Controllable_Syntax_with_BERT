@@ -58,9 +58,11 @@ class POS_Model(nn.Module):
         # self.config = AutoConfig.from_pretrained('bert-base-uncased')
         self.config = Bert_config()
         self.model = AutoModelForMaskedLM.from_pretrained('bert-base-uncased')
+        self.model.bert.embeddings.token_type_embeddings=nn.Embedding(self.config.type_vocab_size, self.config.hidden_size)
         # self.pos_embs = nn.Embedding(51, self.config.hidden_size)
         self.mask_predict = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias=False)
         self.cls = BertOnlyMLMHead(self.config)
+        
         
 
     def forward(self,input_ids=None,token_type_ids=None,attention_mask=None,labels=None,pos_ids=None):
@@ -68,7 +70,7 @@ class POS_Model(nn.Module):
         # pos_ids 是詞性 不是position
 
         # inputs_embeds = model_embedding(input_ids=input_ids,token_type_ids=token_type_ids
-        #                             ,position_ids=pos_ids)
+                                    # ,position_ids=pos_ids)
         inputs_embeds = model_embedding(input_ids=input_ids,token_type_ids=pos_ids)
         
         # return 0
@@ -123,10 +125,10 @@ def test_model():
     pos_ids=intput_pos_tensor)
 
 def main():
-    folder_name="pos_repalce_segment_small_model"
+    folder_name="test_parallel"
     print("start")
     pre_trained_model_name="bert-base-uncased"
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
     device = torch.device("cuda")
 
 
@@ -158,7 +160,6 @@ def main():
     trained_model_path=get_trained_model_path(folder_name)
 
     model=POS_Model()
-    
     model.to(device)
     no_decay = ["bias", "LayerNorm.weight"]
     optimizer_grouped_parameters = [

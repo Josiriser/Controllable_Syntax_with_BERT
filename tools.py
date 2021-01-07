@@ -37,32 +37,40 @@ def write_message(file_path,message):
     with open(file_path,'a',encoding='utf-8') as f:
         f.write(message)
 
-# 用來做原始BERT 需要的Embedding
-class OriBertEmbedding:
-    def __init__(self,input_sentence):
-       self.input_sentence=input_sentence
+# 用來產生BERT預設需要的Embedding
+def segment_embedding(input_sentence):
+    # segment_embedding
+    SEP_flag=False
+    sep_token="[SEP]"
+    input_segment=[]
+    for token in input_sentence:  
+        if (SEP_flag):
+            input_segment.append(1)
+        else:
+            if token != sep_token:
+                input_segment.append(0) 
+            elif token==sep_token :
+                SEP_flag=True
+                input_segment.append(0) 
+    return input_segment
 
+def attention_embedding(input_sentence):
+    # attention_embedding
+    input_attention=[]
 
-    def segment_embedding(self):
-        # segment_embedding
-        SEP_flag=False
-        sep_token="[SEP]"
-        input_segment=[]
-        for token in self.input_sentence:  
-            if (SEP_flag):
-                input_segment.append(1)
-            else:
-                if token != sep_token:
-                    input_segment.append(0) 
-                elif token==sep_token :
-                    SEP_flag=True
-                    input_segment.append(0) 
-        return input_segment
+    input_attention.extend([1]*len(input_sentence))
 
-    def attention_embedding(self):
-        # attention_embedding
-        input_attention=[]
+    return input_attention
 
-        input_attention.extend([1]*len(self.input_sentence))
-
-        return input_attention
+def output_evaluate(semantic,syntatic,ref):
+    test_input=""
+    test_ref=""
+    for i in range(len(semantic)):
+        test_input=test_input+semantic[i]+"\t"+syntatic[i]+"\n"
+        test_ref=test_ref+ref[i]+"\n"
+    test_input_path=os.path.join("result","for_evaluate","test_input.txt")
+    test_ref_path=os.path.join("result","for_evaluate","test_ref.txt")
+    with open(test_input_path,'w',encoding='utf-8') as f:
+        f.write(test_input)
+    with open(test_ref_path,'w',encoding='utf-8') as f:
+        f.write(test_ref)
