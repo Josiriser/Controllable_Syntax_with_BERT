@@ -6,7 +6,7 @@ nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-
 accepted_pos_list=["WRB","WP","WP$","WDT","IN","TO","MD"]
 tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
 
-train_data_count=6000
+train_data_count=1000
 test_data_count=int(train_data_count/2)
 validation_data_count=int(train_data_count/2)
 def data_preprocess(path):

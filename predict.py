@@ -2,6 +2,7 @@ import os
 import torch
 import spacy
 import random
+import argparse
 import torch.nn.functional as F
 from tqdm import tqdm
 from data_preprocess import extrapolate_syntactic
@@ -11,15 +12,33 @@ from transformers import BertConfig, BertForMaskedLM, BertTokenizer
 from transformers import AutoModelForMaskedLM,AutoConfig
 from train_pos import POS_Model
 from tools import segment_embedding,attention_embedding,output_evaluate
+
+# parser settings
+parser = argparse.ArgumentParser()
+parser.add_argument('--file_path', '-fp', type=str)
+parser.add_argument('--model_path', '-mdp', type=str)
+parser.add_argument('--output_file_name', '-oflnm', type=str)
+args = parser.parse_args()
+
+## 
+# python predict.py -fp  mingda_chen_dataset/test_input.txt -mdp trained_model/baseline_small_model/4/pytorch_model.bin -oflnm small_model_pk.txt
+##
+
+## for debug
+args.file_path='dataset/train_6000.txt'
+args.model_path='trained_model/test_config/4/2021-01-07_04:25:36.bin'
+args.output_file_name="small_pos_model_use_train_data.txt"
+##
+
+# pre-load file,information
 tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
 nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
 pos_encoder_dict=convert_tuple_to_dict(nlp.get_pipe("tagger").labels)
 
 def read_test_data():
-    data_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_3000.txt"
     semantic_list=[]
     syntactic_list=[]
-    with open(data_path,'r',encoding='utf-8') as f:
+    with open(args.file_path,'r',encoding='utf-8') as f:
         for line in f:
             line_split_list=line.split('\t')
             semantic_list.append(line_split_list[0])
@@ -55,6 +74,8 @@ def extract_sentence_from_list(sentence_list):
 
     for token in sentence_list:
         string=string+token+" "
+    if string=="":
+        return "#"
     return string
 
 def check_special_token(sentence_list):
@@ -65,10 +86,12 @@ def check_special_token(sentence_list):
 def select_model(model_num = 0):
     if model_num ==0:
         bert_config, bert_class = (BertConfig, BertForMaskedLM)
-        config = bert_config.from_pretrained('trained_model/baseline_small_model/4/config.json')
-        model = bert_class.from_pretrained('trained_model/baseline_small_model/4/pytorch_model.bin', config=config)
+        # config = bert_config.from_pretrained('trained_model/baseline_small_model/4/config.json')
+        config = AutoConfig.from_pretrained('bert-base-uncased')
+        model = bert_class.from_pretrained(args.model_path, config=config)
     elif model_num ==1:
-        model = torch.load("trained_model/pos_repalce_segment_small_model/0/2020-12-29_07:20:41.bin")
+        model = torch.load(args.model_path)
+        
     return model
 
 # def segment_embedding(input_sentence):
@@ -142,7 +165,7 @@ def main():
     # model select
     # 0 : base
     # 1 : pos
-    model_num = 0
+    model_num = 1
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     device = torch.device("cuda")
 
@@ -206,11 +229,11 @@ def main():
                 outputs=model(input_ids=input_id_tensor,token_type_ids=input_segment_tensor,
                 attention_mask=input_attention_tensor)
             elif model_num==1:
-                # input_pos=pos_embedding(ori_semantic_sentence,ori_syntactic_list[index],input_syntactic)
-                input_pos.extend([1]*len(input_sentence))
+                input_pos=pos_embedding(ori_semantic_sentence,ori_syntactic_list[index],input_syntactic)
+                
                 # assert len(input_sentence)==len(input_pos)
                 input_pos_tensor=torch.tensor([input_pos]).to(device)
-                outputs=model(input_ids=input_id_tensor,token_type_ids=input_segment_tensor,
+                outputs=model(input_ids=input_id_tensor,token_type_ids=None,
                 attention_mask=input_attention_tensor,pos_ids=input_pos_tensor)
 
             predictions=outputs[0]
@@ -245,26 +268,26 @@ def main():
         input_semantic_clean=extract_sentence_from_list(input_semantic)
         input_syntactic_clean=extract_sentence_from_list(input_syntactic)
         output_sentence_clean=extract_sentence_from_list(output_sentence)
-        # output_txt=output_txt+"input_semantic  : "+input_semantic_clean+"\n"
-        # output_txt=output_txt+"ori_syntactic   : "+ori_syntactic_list[index]+"\n"
-        # output_txt=output_txt+"input_syntactic : "+input_syntactic_clean+"\n"
-        # output_txt=output_txt+"output_sentence : "+output_sentence_clean+"\n"
-        # output_txt=output_txt+"\n\n"
+        output_txt=output_txt+"input_semantic  : "+input_semantic_clean+"\n"
+        output_txt=output_txt+"ori_syntactic   : "+ori_syntactic_list[index]+"\n"
+        output_txt=output_txt+"input_syntactic : "+input_syntactic_clean+"\n"
+        output_txt=output_txt+"output_sentence : "+output_sentence_clean+"\n"
+        output_txt=output_txt+"\n\n"
 
         semantic.append(ori_semantic_sentence)
         syntactic.append(ori_syntactic_list[index])
         ref.append(output_sentence_clean)
         
-        # if count % 50 ==0:
+        if count % 50 ==0:
             
-        #     output_file_path=os.path.join("result","output_pos_small.txt")
-        #     with open(output_file_path,'a',encoding='utf-8') as f:
-        #         f.write(output_txt)
-        #     output_txt=""
+            output_file_path=os.path.join("result",args.output_file_name)
+            with open(output_file_path,'a',encoding='utf-8') as f:
+                f.write(output_txt)
+            output_txt=""
     #　產出evaluate file
-    assert len(semantic)==len(syntactic)
-    assert len(semantic)==len(ref)
-    output_evaluate(semantic,syntactic,ref)
+    # assert len(semantic)==len(syntactic)
+    # assert len(semantic)==len(ref)
+    # output_evaluate(semantic,syntactic,ref)
 
 
 

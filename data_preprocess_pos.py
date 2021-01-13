@@ -33,8 +33,8 @@ def pos_match(tag_dict,token_list,pos_encoder_dict):
                 pos_list.append('NONE')
                 pos_list[index-1]='NONE'
         else:
-            if token in tag_dict.keys():
-                pos_list.append(tag_dict[token])
+            if token.lower() in tag_dict.keys():
+                pos_list.append(tag_dict[token.lower()])
             else:
                 pos_list.append('NONE')
 
@@ -55,7 +55,7 @@ def get_pos_embedding(semantics_list,ori_syntactic_list,syntactic_list_in_dict,n
     pos_encoder_dict={}
     for key_num,pos_tag in pos_encoder_dict_temp.items():
         pos_encoder_dict[key_num+1]=pos_tag
-    print(pos_encoder_dict)
+    # print(pos_encoder_dict)
     tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
     for i in tqdm(range(len(ori_syntactic_list))):
         # 先產生兩句話詞性的dict
@@ -82,6 +82,8 @@ def get_pos_embedding(semantics_list,ori_syntactic_list,syntactic_list_in_dict,n
             input_pos.extend(semantics_pos)
             input_pos.extend(syntactic_pos)
             assert len(input_token)==len(input_pos)
+            # print("input_token",input_token)
+            # print("input_pos",input_pos)
             pos_embedding_list.append(input_pos.copy())
 
     return pos_embedding_list
@@ -94,7 +96,7 @@ def padding(pos_embedding_list):
     print("max_len:",max_len)
     for i in range(len(pos_embedding_list)):
         while len(pos_embedding_list[i]) < max_len:
-            pos_embedding_list[i].append(50)
+            pos_embedding_list[i].append(0)
     return pos_embedding_list
 
 def convert_embedding_to_feature(type_,token_embedding_id_list, segment_embedding_list, attention_embedding_list, maskLM_embedding_list,pos_embedding_list):
@@ -115,9 +117,9 @@ def main():
     nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
 
     data_path_dict={
-        "train":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_6000.txt",
-        "test":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_3000.txt",
-        "validation":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_3000.txt"
+        "train":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_1000.txt",
+        "test":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_500.txt",
+        "validation":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_500.txt"
     }
     for key,data_path in data_path_dict.items():
 
