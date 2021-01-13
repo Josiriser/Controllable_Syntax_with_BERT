@@ -25,9 +25,9 @@ args = parser.parse_args()
 ##
 
 ## for debug
-args.file_path='dataset/train_6000.txt'
-args.model_path='trained_model/test_config/4/2021-01-07_04:25:36.bin'
-args.output_file_name="small_pos_model_use_train_data.txt"
+args.file_path='dataset/train_1000.txt'
+args.model_path='trained_model/pos_test_loss_low/4/2021-01-12_03:02:41.bin'
+args.output_file_name="pos_test_loss_low.txt"
 ##
 
 # pre-load file,information
@@ -166,8 +166,8 @@ def main():
     # 0 : base
     # 1 : pos
     model_num = 1
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-    device = torch.device("cuda")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    device = torch.device("cpu")
 
     ori_semantic_list,ori_syntactic_list=read_test_data()
     model = select_model(model_num)

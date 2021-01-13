@@ -117,9 +117,9 @@ def main():
     nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
 
     data_path_dict={
-        "train":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_1000.txt",
-        "test":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_500.txt",
-        "validation":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_500.txt"
+        "train":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_20000.txt",
+        "test":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_10000.txt",
+        "validation":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_10000.txt"
     }
     for key,data_path in data_path_dict.items():
 

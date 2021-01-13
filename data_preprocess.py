@@ -37,7 +37,8 @@ def extrapolate_syntactic(ori_syntactic_list,nlp):
     part_maskLM_embedding_list_in_dict={}
     count=0
     for index,ori_syntactic_sentence in enumerate(tqdm(ori_syntactic_list)):
-        
+        if index!=2427:
+            continue
         doc = nlp(ori_syntactic_sentence)
         if len(doc)>=512:
             print(ori_syntactic_sentence)
