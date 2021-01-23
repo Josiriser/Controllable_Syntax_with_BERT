@@ -1,12 +1,16 @@
 __pycache__/*
 .ipynb_checkpoints/*
 .model_holder/*
+bert-base-uncased/*
 data_feature/*
 dataset/*
 loss/*
 mingda_chen_dataset/*
 model/*
 result/*
+sequential_dataset/*
+squencial_model/*
+test_squencemodel/*
 trained_model/*
 transformers/*
 all_pos_list.txt

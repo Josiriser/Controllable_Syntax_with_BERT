@@ -5,13 +5,13 @@ import random
 import argparse
 import torch.nn.functional as F
 from tqdm import tqdm
-from data_preprocess import extrapolate_syntactic
-from data_preprocess_pos import get_pos_embedding,convert_tuple_to_dict,get_sentence_tag_dict
-from data_preprocess_pos import pos_match
+from data_extra_preprocess import extrapolate_syntactic
+from data_extra_preprocess_pos import get_pos_embedding,convert_tuple_to_dict,get_sentence_tag_dict
+from data_extra_preprocess_pos import pos_match
 from transformers import BertConfig, BertForMaskedLM, BertTokenizer
 from transformers import AutoModelForMaskedLM,AutoConfig
-from train_pos import POS_Model
-from tools import segment_embedding,attention_embedding,output_evaluate
+from train_pos_copy import POS_Model
+from tools import segment_embedding,attention_embedding,output_evaluate,embedding_padding
 
 # parser settings
 parser = argparse.ArgumentParser()
@@ -25,9 +25,9 @@ args = parser.parse_args()
 ##
 
 ## for debug
-args.file_path='dataset/train_1000.txt'
-args.model_path='trained_model/pos_test_loss_low/4/2021-01-12_03:02:41.bin'
-args.output_file_name="pos_test_loss_low.txt"
+args.file_path='dataset/train_10.txt'
+args.model_path='trained_model/baseline_small_test_SEP_model_DataParallel/9/pytorch_model.bin'
+args.output_file_name="baseline_small_test_SEP_model2_DataParallel.txt"
 ##
 
 # pre-load file,information
@@ -165,9 +165,9 @@ def main():
     # model select
     # 0 : base
     # 1 : pos
-    model_num = 1
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-    device = torch.device("cpu")
+    model_num = 0
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    device = torch.device("cuda")
 
     ori_semantic_list,ori_syntactic_list=read_test_data()
     model = select_model(model_num)
@@ -218,8 +218,11 @@ def main():
             # input_maskLM=maskLM_embedding(input_sentence)
             assert len(input_sentence)==len(input_segment)
             assert len(input_sentence)==len(input_attention)
-            
             input_sentence_ids=tokenizer.convert_tokens_to_ids(input_sentence)
+            # padding
+            input_sentence_ids=embedding_padding(512,input_sentence_ids)
+            input_segment=embedding_padding(512,input_segment)
+            input_attention=embedding_padding(512,input_attention)
 
             input_id_tensor=torch.tensor([input_sentence_ids]).to(device)
             input_segment_tensor=torch.tensor([input_segment]).to(device)
@@ -230,13 +233,14 @@ def main():
                 attention_mask=input_attention_tensor)
             elif model_num==1:
                 input_pos=pos_embedding(ori_semantic_sentence,ori_syntactic_list[index],input_syntactic)
-                
+                input_pos=embedding_padding(512,input_pos)
                 # assert len(input_sentence)==len(input_pos)
                 input_pos_tensor=torch.tensor([input_pos]).to(device)
                 outputs=model(input_ids=input_id_tensor,token_type_ids=None,
                 attention_mask=input_attention_tensor,pos_ids=input_pos_tensor)
 
             predictions=outputs[0]
+            # predictions=outputs[1]
             output_sentence=[]
             syn_flag=False
             for word in input_sentence: 
@@ -248,6 +252,8 @@ def main():
                     logit_prob = F.softmax(predictions[0, maskpos]).data.tolist()
                     predicted_index = torch.argmax(predictions[0, maskpos]).item()
                     predicted_token = tokenizer.convert_ids_to_tokens([predicted_index])[0]
+                    # print(predicted_token)
+                    # exit()
                     # print(predicted_token,logit_prob[predicted_index])
                     # output_sentence.append(predicted_token)
                     input_sentence[maskpos]=predicted_token
@@ -278,12 +284,11 @@ def main():
         syntactic.append(ori_syntactic_list[index])
         ref.append(output_sentence_clean)
         
-        if count % 50 ==0:
-            
-            output_file_path=os.path.join("result",args.output_file_name)
-            with open(output_file_path,'a',encoding='utf-8') as f:
-                f.write(output_txt)
-            output_txt=""
+
+    output_file_path=os.path.join("result",args.output_file_name)
+    with open(output_file_path,'a',encoding='utf-8') as f:
+        f.write(output_txt)
+    output_txt=""
     #　產出evaluate file
     # assert len(semantic)==len(syntactic)
     # assert len(semantic)==len(ref)

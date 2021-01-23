@@ -1,10 +1,24 @@
 import torch
 import spacy
 import pickle
+import argparse
 from tqdm import tqdm
 from transformers import BertConfig
 from transformers import BertTokenizer
 from torch.utils.data import TensorDataset
+from tools import get_sentence_tag_dict,SEP_token_change,get_dataset_list
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--train_file_path', '-trfp', type=str)
+parser.add_argument('--test_file_path', '-tefp', type=str)
+parser.add_argument('--valid_file_path', '-vafp', type=str)
+args = parser.parse_args()
+
+## for debug
+args.train_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_10.txt"
+args.test_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_5.txt"
+args.valid_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_5.txt"
+## 
 
 mask_token="[MASK]"
 mask_token_pair=(-1,mask_token)
@@ -13,42 +27,28 @@ sep_token_pair=(-1,sep_token)
 
 sepcial_token_list=["[CLS]","[SEP]","[MASK]"]
 
-def get_data_list(data_path):
 
-    
-    semantics_list=[]
-    unporcessed_syntactic_list=[]
-    count=0
-    with open(data_path,'r',encoding='utf-8') as f:
-        for line in f:
-            line_processed_list=line.strip("\n").split("\t")
-            semantics_list.append(line_processed_list[0])
-            unporcessed_syntactic_list.append(line_processed_list[1])
-            count+=1
-            
-    return semantics_list,unporcessed_syntactic_list
 
 def extrapolate_syntactic(ori_syntactic_list,nlp):
     # 外插 [MASK] ， 產出所有可能
-    # tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
+    tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
     ignored_pos_list=['NN','NNS','NNP','NNPS',"IN","VB"]
     accepted_pos_list=["WRB","WP","WP$","WDT","IN","TO","MD"]
     syntactic_list_in_dict={}
     part_maskLM_embedding_list_in_dict={}
     count=0
     for index,ori_syntactic_sentence in enumerate(tqdm(ori_syntactic_list)):
-        if index!=2427:
-            continue
         doc = nlp(ori_syntactic_sentence)
-        if len(doc)>=512:
-            print(ori_syntactic_sentence)
+        tag_dict=get_sentence_tag_dict(nlp,ori_syntactic_sentence)
         # 取得ori_syntactic_sentence 每個token 的 位置  
-        ori_syntactic_sentence_token_position_dict=get_position(doc)
-    
+        # ori_syntactic_sentence_token_position_dict=get_position(doc)
+
+        token_list=tokenizer.tokenize(ori_syntactic_sentence)
+        ori_syntactic_sentence_token_position_dict=get_position(token_list)
         # 先取出spacy 的 token，以及留下來的位置
         # syntactic_token_position_dict,syntactic_token_position_with_empty_dict=spacy_tokened(doc,ignored_pos_list)
         # 改成留下不重要的字，留下句型結構
-        syntactic_token_position_dict,syntactic_token_position_with_empty_dict=spacy_tokened(doc,accepted_pos_list)
+        syntactic_token_position_dict,syntactic_token_position_with_empty_dict=spacy_tokened(doc,accepted_pos_list,token_list,tag_dict)
         # 檢查是否全都是Empty
         # if (check_syntactic_token_position_with_empty_dict(syntactic_token_position_with_empty_dict)):
         #     continue
@@ -60,32 +60,50 @@ def extrapolate_syntactic(ori_syntactic_list,nlp):
         #         syntactic_list_in_dict[index]=extrapolate(ori_syntactic_sentence,ori_syntactic_sentence_token_position_dict,syntactic_token_position_dict,syntactic_token_position_with_empty_dict)
         syntactic_list_in_dict[index],part_maskLM_embedding_list_in_dict[index]=extrapolate(ori_syntactic_sentence,ori_syntactic_sentence_token_position_dict,syntactic_token_position_dict,syntactic_token_position_with_empty_dict)
         count+=1
+        # print(count)
         # if count==200:
         #     break
         
     return syntactic_list_in_dict,part_maskLM_embedding_list_in_dict
 
-def get_position(doc):
+def get_position(token_list):
     position_dict={}
-    for i,token in enumerate(doc):
-        position_dict[i]=token.text
+    for i,token in enumerate(token_list):
+        position_dict[i]=token
     
     return position_dict
 
-def spacy_tokened(doc,accepted_pos_list):
+# 捨棄doc的tokenzier 避免造成BERT tokenzier.convert_tokens_to_ids 異常
+# 以結果來說 不能讓mask 的字是 [UNK]
+# def get_position(doc):
+#     position_dict={}
+#     for i,token in enumerate(doc):
+#         position_dict[i]=token.text
+    
+#     return position_dict
+def spacy_tokened(doc,accepted_pos_list,token_list,tag_dict):
     # syntactic_token_list=[]
     syntactic_token_position_dict={}
     syntactic_token_position_with_empty_dict={}
-    for i,token in enumerate(doc): 
-        # if token.tag_ =="IN":
-        #     print(token.text)
-        # if token.tag_ not in ignored_pos_list:
-        if token.tag_ in accepted_pos_list:
-            # syntactic_token_list.append(token.text)
-            syntactic_token_position_dict[i]=token.text
-            syntactic_token_position_with_empty_dict[i]=token.text
+    #　迴圈的部分，應該改成token_list的大小
+    for i,token in enumerate(token_list):
+        if token in tag_dict:
+            if tag_dict[token] in accepted_pos_list:
+                syntactic_token_position_dict[i]=token
+                syntactic_token_position_with_empty_dict[i]=token
+            else:
+                syntactic_token_position_with_empty_dict[i]="[E]"
         else:
             syntactic_token_position_with_empty_dict[i]="[E]"
+
+    # for i,token in enumerate(doc): 
+    #     # if token.tag_ not in ignored_pos_list:
+    #     if token.tag_ in accepted_pos_list:
+    #         # syntactic_token_list.append(token.text)
+    #         syntactic_token_position_dict[i]=token.text
+    #         syntactic_token_position_with_empty_dict[i]=token.text
+    #     else:
+    #         syntactic_token_position_with_empty_dict[i]="[E]"
     return syntactic_token_position_dict,syntactic_token_position_with_empty_dict
 
 def extrapolate(ori_syntactic_sentence,ori_syntactic_sentence_token_position_dict,syntactic_token_position_dict,syntactic_token_position_with_empty_dict):
@@ -280,6 +298,8 @@ def get_embedding(semantics_list,ori_syntactic_list,syntactic_list_in_dict,part_
                     else:
                         input_maskLM.append(-100)
                         SEP_flag=True
+            # print("input_token",input_token)
+            # print("input_maskLM",input_maskLM)
             maskLM_embedding_list.append(input_maskLM.copy())
             # print(input_maskLM)
             assert len(input_token) == len(input_segment)
@@ -323,19 +343,18 @@ def make_dataset(input_id, input_segment, input_attention, input_maskLM):
         all_input_id, all_input_segment, all_input_attention, all_input_maskLM)
 
     return full_dataset
+
 def main():
-    tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
     nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
-    nlp.get_pipe("tagger").labels
-   
     data_path_dict={
-    "train":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_6000.txt",
-    "test":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_3000.txt",
-    "validation":"/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_3000.txt"
+    "train":args.train_file_path,
+    "test":args.test_file_path,
+    "validation":args.valid_file_path
     }
     for key,data_path in data_path_dict.items():
+
         print("get {0} data ...".format(key))
-        semantics_list,ori_syntactic_list=get_data_list(data_path)
+        semantics_list,ori_syntactic_list=get_dataset_list(data_path)
         print("get {0} data extrapolate syntactic ...".format(key))
         syntactic_list_in_dict,part_maskLM_embedding_list_in_dict=extrapolate_syntactic(ori_syntactic_list,nlp)
         print("{0} syntactic data's length:".format(key),len(syntactic_list_in_dict))
@@ -344,8 +363,11 @@ def main():
         token_embedding_id_list, segment_embedding_list, attention_embedding_list, maskLM_embedding_list=get_embedding(semantics_list,ori_syntactic_list,syntactic_list_in_dict,part_maskLM_embedding_list_in_dict)
         print("convert {0} data embedding to feature...".format(key))
         convert_embedding_to_feature(key,token_embedding_id_list, segment_embedding_list, attention_embedding_list, maskLM_embedding_list)
-        
+    
     print("all finished")
+
+
+
 if __name__ == "__main__":
    
     main()
