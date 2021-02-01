@@ -6,7 +6,7 @@ nlp =spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-
 accepted_pos_list=["WRB","WP","WP$","WDT","IN","TO","MD"]
 tokenizer =BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
 
-train_data_count=6000
+train_data_count=20000
 test_data_count=int(train_data_count/2)
 validation_data_count=int(train_data_count/2)
 # 考慮相似分數
@@ -75,10 +75,10 @@ def save_files(sentence_train_list,sentence_test_list,sentence_validation_list):
     with open(save_path+"mingda_train_"+str(train_data_count)+".txt",'w',encoding='utf-8') as f:
         for sentence in sentence_train_list:
             f.write(sentence+"\n")
-    with open(save_path+"mingdatest_"+str(test_data_count)+".txt",'w',encoding='utf-8') as f:
+    with open(save_path+"mingda_test_"+str(test_data_count)+".txt",'w',encoding='utf-8') as f:
         for sentence in sentence_test_list:
             f.write(sentence+"\n")
-    with open(save_path+"mingdavalidation_"+str(validation_data_count)+".txt",'w',encoding='utf-8') as f:
+    with open(save_path+"mingda_validation_"+str(validation_data_count)+".txt",'w',encoding='utf-8') as f:
         for sentence in sentence_validation_list:
             f.write(sentence+"\n")
 

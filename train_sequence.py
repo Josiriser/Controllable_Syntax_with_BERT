@@ -8,28 +8,28 @@ import torch.nn as nn
 from tools import get_data_set,predict_test_in_train_mode,write_message
 from torch.utils.data import DataLoader
 from transformers import BertConfig,BertForMaskedLM,AdamW
-## 外部參數設定
-parser = argparse.ArgumentParser()
-parser.add_argument('--train_file_path', '-trfp', type=str)
-parser.add_argument('--test_file_path', '-tefp', type=str)
-parser.add_argument('--valid_file_path', '-vafp', type=str)
-parser.add_argument('--trained_model_path', '-modpath', type=str)
-parser.add_argument('--batch_size', '-batch', type=int)
-parser.add_argument('--gpu_num', '-gpun', type=int)
-parser.add_argument('--epoch_num', '-epoch', type=int)
-parser.add_argument('--loss_file_name', '-lossnm', type=str)
-
-args = parser.parse_args()
-
-## 預設值
-pre_trained_model_name="bert-base-uncased"
-file_name=args.loss_file_name
-loss_information_file_path=os.path.join("loss",file_name+".txt")
 
 
+def main():
 
+    ## 外部參數設定
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_file_path', '-trfp', type=str)
+    parser.add_argument('--test_file_path', '-tefp', type=str)
+    parser.add_argument('--valid_file_path', '-vafp', type=str)
+    parser.add_argument('--trained_model_path', '-modpath', type=str)
+    parser.add_argument('--batch_size', '-batch', type=int)
+    parser.add_argument('--gpu_num', '-gpun', type=int)
+    parser.add_argument('--epoch_num', '-epoch', type=int)
+    parser.add_argument('--loss_file_name', '-lossnm', type=str)
 
-if __name__ == "__main__":
+    args = parser.parse_args()
+
+    ## 預設值
+    pre_trained_model_name="bert-base-uncased"
+    file_name=args.loss_file_name
+    loss_information_file_path=os.path.join("loss",file_name+".txt")
+
     print("start to trian")
 
     # GPU setting
@@ -91,7 +91,12 @@ if __name__ == "__main__":
           
             model.zero_grad()
 
+        model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
+        if not os.path.isdir(args.trained_model_path):
+            os.mkdir(args.trained_model_path)
+        model_to_save.save_pretrained(args.trained_model_path+'/'+str(epoch))
 
+        
         average_trian_loss=round(sum_train_loss/count,3)
 
         # test model
@@ -117,7 +122,8 @@ if __name__ == "__main__":
         message='第' + str(epoch+1) + '次' + '訓練模式，loss為:' + str(average_trian_loss) + '，測試模式，loss為:' + str(average_test_loss)
         print(message)
         write_message(loss_information_file_path,message+"\n")
-        model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
-        if not os.path.isdir(args.trained_model_path):
-            os.mkdir(args.trained_model_path)
-        model_to_save.save_pretrained(args.trained_model_path+'/'+str(epoch))
+        
+
+
+if __name__ == "__main__":
+    main()

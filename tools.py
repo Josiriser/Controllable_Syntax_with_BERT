@@ -71,16 +71,11 @@ def embedding_padding(padding_length,embedding_list):
         padding_list.append(0)
     return padding_list
     
-def output_evaluate(semantic,syntatic,ref):
-    test_input=""
+def output_evaluate(ref,filename):
     test_ref=""
-    for i in range(len(semantic)):
-        test_input=test_input+semantic[i]+"\t"+syntatic[i]+"\n"
+    for i in range(len(ref)):
         test_ref=test_ref+ref[i]+"\n"
-    test_input_path=os.path.join("result","for_evaluate","test_input.txt")
-    test_ref_path=os.path.join("result","for_evaluate","test_ref.txt")
-    with open(test_input_path,'w',encoding='utf-8') as f:
-        f.write(test_input)
+    test_ref_path=os.path.join("result","for_evaluate",filename+"_ref.txt")
     with open(test_ref_path,'w',encoding='utf-8') as f:
         f.write(test_ref)
 
@@ -218,3 +213,53 @@ def make_dataset(input_id, input_segment, input_attention, input_maskLM):
         all_input_id, all_input_segment, all_input_attention, all_input_maskLM)
 
     return full_dataset
+
+
+def make_dataset_add_pos(input_id, input_segment, input_attention, input_maskLM,input_pos):
+    all_input_id = torch.tensor(
+        [input_id for input_id in input_id], dtype=torch.long)
+    all_input_segment = torch.tensor(
+        [input_segment for input_segment in input_segment], dtype=torch.long)
+    all_input_attention = torch.tensor(
+        [input_attention for input_attention in input_attention], dtype=torch.long)
+    all_input_maskLM = torch.tensor(
+        [input_maskLM for input_maskLM in input_maskLM], dtype=torch.long)
+    all_input_pos = torch.tensor(
+        [input_pos for input_pos in input_pos], dtype=torch.long)
+    full_dataset = TensorDataset(
+        all_input_id, all_input_segment, all_input_attention, all_input_maskLM,all_input_pos)
+
+    return full_dataset
+
+def extract_sentence_from_list(sentence_list):
+    string=""
+
+    for token in sentence_list:
+        string=string+token+" "
+    if string=="":
+        return "#"
+    return string
+
+def produce_analysis_file(syntactic_keyword_list,ref_list,filnm):
+
+    # 讀取原作者的test_input
+    mingda_test_input="mingda_chen_dataset/test_input.txt"
+    with open(mingda_test_input,'r',encoding='utf-8') as mingda:
+        test_input=mingda.readlines()
+
+    assert len(syntactic_keyword_list)==len(test_input)
+    assert len(syntactic_keyword_list)==len(ref_list)
+    output_txt=""
+    for i in range(len(syntactic_keyword_list)):
+        output_txt=output_txt+"semantic   : "+test_input[i].split("\t")[0]+"\n"
+        output_txt=output_txt+"syntactic  : "+test_input[i].split("\t")[1]
+        output_txt=output_txt+"keyword    : "+extract_sentence_from_list(syntactic_keyword_list[i])+"\n"
+        output_txt=output_txt+"ref        : "+ref_list[i]+"\n"
+        output_txt=output_txt+"\n\n"
+
+    output_file_path=os.path.join("result",filnm+".txt")
+    with open(output_file_path,'a',encoding='utf-8') as f:
+        f.write(output_txt)
+
+# if __name__ == "__main__":
+#     produce_compared_analysis_file(1,1,1)

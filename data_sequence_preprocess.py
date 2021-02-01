@@ -1,34 +1,38 @@
 
 import spacy
 import argparse
+import random
 from tqdm import tqdm
 from transformers import BertTokenizer
 from tools import get_dataset_list,get_accepted_pos_list,padding,convert_embedding_to_feature
 
-## 外部參數設定
-parser = argparse.ArgumentParser()
-parser.add_argument('--train_file_path', '-trfp', type=str)
-parser.add_argument('--test_file_path', '-tefp', type=str)
-parser.add_argument('--valid_file_path', '-vafp', type=str)
-parser.add_argument('--output_file_path', '-outfp', type=str)
-args = parser.parse_args()
 
-## 預設值
-
-tokenizer = BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
-nlp = spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
-accepted_pos_list=get_accepted_pos_list()
-##
-
-## for debug
-# args.train_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_10.txt"
-# args.test_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_5.txt"
-# args.valid_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_5.txt"
-# args.output_file_path="/user_data/Project/Controllable_Syntax_with_BERT/sequential_dataset"
-## 
 
 
 def main():
+    ## 外部參數設定
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_file_path', '-trfp', type=str)
+    parser.add_argument('--test_file_path', '-tefp', type=str)
+    parser.add_argument('--valid_file_path', '-vafp', type=str)
+    parser.add_argument('--output_file_path', '-outfp', type=str)
+    args = parser.parse_args()
+
+    ## 預設值
+
+    tokenizer = BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
+    nlp = spacy.load("model/spacy/en_core_web_md-2.3.1/en_core_web_md/en_core_web_md-2.3.1")
+    accepted_pos_list=get_accepted_pos_list()
+    ##
+
+    ## for debug
+    # args.train_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/train_10.txt"
+    # args.test_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/test_5.txt"
+    # args.valid_file_path="/user_data/Project/Controllable_Syntax_with_BERT/dataset/validation_5.txt"
+    # args.output_file_path="/user_data/Project/Controllable_Syntax_with_BERT/sequential_dataset"
+    ## 
+
+
     data_path_dict={
     "train":args.train_file_path,
     "test":args.test_file_path,
@@ -39,16 +43,16 @@ def main():
         semantic_list,syntactic_list=get_dataset_list(data_path)
 
         print(" get {0} all syntactic keyword list ...".format(key))
-        all_syntactic_keyword_list=get_all_syntactic_keyword_list(syntactic_list)
+        all_syntactic_keyword_list=get_all_syntactic_keyword_list(syntactic_list,accepted_pos_list,tokenizer,nlp)
 
         print(" insert sep to {0} all syntactic keyword list ...".format(key))
         all_syntactic_keyword_with_sep_list=insert_sep_token(all_syntactic_keyword_list)
 
         print(" get  {0} all sequence sentence list ...".format(key))
-        all_sequence_sentence_list=get_all_sequence_sentence_list(syntactic_list)
+        all_sequence_sentence_list=get_all_sequence_sentence_list(syntactic_list,tokenizer)
 
         print(" get {0} embeddings ...".format(key))
-        token_embedding_id_list,segment_embedding_list,attention_embedding_list,maskLM_embedding_list=get_embeddings(semantic_list,syntactic_list,all_syntactic_keyword_with_sep_list,all_sequence_sentence_list)
+        token_embedding_id_list,segment_embedding_list,attention_embedding_list,maskLM_embedding_list=get_embeddings(semantic_list,syntactic_list,all_syntactic_keyword_with_sep_list,all_sequence_sentence_list,tokenizer)
 
         print(" convert to feature {0} embeddings ...".format(key))
         convert_embedding_to_feature(args.output_file_path,key,token_embedding_id_list,
@@ -58,15 +62,15 @@ def main():
 
     return 0
 
-def get_all_syntactic_keyword_list(syntactic_list):
+def get_all_syntactic_keyword_list(syntactic_list,accepted_pos_list,tokenizer,nlp):
     all_syntactic_keyword_list=[]
     for syntactic_sentence in tqdm(syntactic_list):
-        syntactic_keyword_list=get_syntactic_keyword(syntactic_sentence)
+        syntactic_keyword_list=get_syntactic_keyword(syntactic_sentence,accepted_pos_list,tokenizer,nlp)
         all_syntactic_keyword_list.append(syntactic_keyword_list)
 
     return all_syntactic_keyword_list
 
-def get_syntactic_keyword(syntactic_sentence):
+def get_syntactic_keyword(syntactic_sentence,accepted_pos_list,tokenizer,nlp):
     syntactic_keyword_list=[]
     doc = nlp(syntactic_sentence)
     token_list=tokenizer.tokenize(syntactic_sentence)
@@ -74,6 +78,10 @@ def get_syntactic_keyword(syntactic_sentence):
         # 檢查 keyword 也要在 token_list 裡的字，避免 BERT 預測是 UNK
         if token.tag_ in accepted_pos_list and token.text in token_list:
             syntactic_keyword_list.append(token.text)
+    # if len(syntactic_keyword_list)==0:
+    #     token_len=len(token_list)
+    #     rand_pos=random.randint(0,token_len-2)
+    #     syntactic_keyword_list.append(token_list[rand_pos])
     return syntactic_keyword_list
 
 def insert_sep_token(all_syntactic_keyword_list):
@@ -87,7 +95,7 @@ def insert_sep_token(all_syntactic_keyword_list):
     return all_syntactic_keyword_with_sep_list
 
 
-def get_all_sequence_sentence_list(syntactic_list):
+def get_all_sequence_sentence_list(syntactic_list,tokenizer):
     all_sequence_sentence_list=[]
     
     for syntactic_sentence in tqdm(syntactic_list):
@@ -117,7 +125,7 @@ def get_all_sequence_sentence_list(syntactic_list):
     return all_sequence_sentence_list
 
 
-def get_embeddings(semantic_list,syntactic_list,all_syntactic_keyword_with_sep_list,all_sequence_sentence_list):
+def get_embeddings(semantic_list,syntactic_list,all_syntactic_keyword_with_sep_list,all_sequence_sentence_list,tokenizer):
 
     token_embedding_id_list=[]
     segment_embedding_list = []

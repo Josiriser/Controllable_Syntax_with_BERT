@@ -25,8 +25,8 @@ args = parser.parse_args()
 ##
 
 ## for debug
-args.file_path='dataset/train_10.txt'
-args.model_path='trained_model/baseline_small_test_SEP_model_DataParallel/9/pytorch_model.bin'
+args.file_path='mingda_chen_dataset/test_input.txt'
+args.model_path='trained_model/baseline_small_model/4/pytorch_model.bin'
 args.output_file_name="baseline_small_test_SEP_model2_DataParallel.txt"
 ##
 
@@ -285,14 +285,14 @@ def main():
         ref.append(output_sentence_clean)
         
 
-    output_file_path=os.path.join("result",args.output_file_name)
-    with open(output_file_path,'a',encoding='utf-8') as f:
-        f.write(output_txt)
-    output_txt=""
+    # output_file_path=os.path.join("result",args.output_file_name)
+    # with open(output_file_path,'a',encoding='utf-8') as f:
+    #     f.write(output_txt)
+    # output_txt=""
     #　產出evaluate file
-    # assert len(semantic)==len(syntactic)
-    # assert len(semantic)==len(ref)
-    # output_evaluate(semantic,syntactic,ref)
+    assert len(semantic)==len(syntactic)
+    assert len(semantic)==len(ref)
+    output_evaluate(ref=ref,filename="extra")
 
 
 

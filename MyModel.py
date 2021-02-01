@@ -11,7 +11,7 @@ class MyEmbeddings(nn.Module):
         self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size).cuda()
         
         ## 增加 pos_embeddings
-        self.pos_embeddings=nn.Embedding(13,config.hidden_size).cuda()
+        self.pos_embeddings=nn.Embedding(18,config.hidden_size).cuda()
 
         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
         # any TensorFlow checkpoint file

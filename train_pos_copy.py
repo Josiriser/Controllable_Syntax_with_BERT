@@ -3,8 +3,8 @@ import torch
 import pickle
 import numpy
 import torch.nn as nn
-import data_preprocess
-from tools import make_dataset,get_trained_model_path,write_message,predict_test_in_train_mode
+import data_extra_preprocess
+from tools import make_dataset_add_pos,get_trained_model_path,write_message,predict_test_in_train_mode
 from Model_holder import ModelHolder
 from tqdm import tqdm
 from torch.nn import CrossEntropyLoss
@@ -118,7 +118,7 @@ def main():
     test_input_maskLM = test_data_feature["input_maskLM"]
     test_input_pos = test_data_feature["input_pos"]
     # print(test_input_pos[0])
-    test_dataset = make_dataset(
+    test_dataset = make_dataset_add_pos(
         test_input_id, test_input_segment, test_input_attention, test_input_maskLM,test_input_pos)
     test_dataloader = DataLoader(test_dataset, batch_size=8, shuffle=True)
     print("start to read train data feature")
@@ -130,7 +130,7 @@ def main():
     train_input_maskLM = train_data_feature["input_maskLM"]
     train_input_pos = train_data_feature["input_pos"]
 
-    train_dataset = make_dataset(
+    train_dataset = make_dataset_add_pos(
         train_input_id, train_input_segment, train_input_attention, train_input_maskLM,train_input_pos)
     train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True)
     print("finish reading feature")
