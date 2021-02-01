@@ -9,5 +9,7 @@ file_Dirname="dataset"
 
 if not os.path.isdir(file_Dirname):
     os.makedirs(file_Dirname)
-    
+
 os.system("rar x "+file_name+" "+file_Dirname)
+
+os.system("rm "+file_name)
