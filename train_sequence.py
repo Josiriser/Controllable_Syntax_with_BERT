@@ -93,7 +93,7 @@ def main():
 
         model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
         if not os.path.isdir(args.trained_model_path):
-            os.mkdir(args.trained_model_path)
+            os.makedirs(args.trained_model_path)
         model_to_save.save_pretrained(args.trained_model_path+'/'+str(epoch))
 
         
