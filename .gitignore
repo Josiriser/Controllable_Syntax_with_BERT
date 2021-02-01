@@ -1,6 +1,7 @@
 __pycache__/*
 .ipynb_checkpoints/*
 .model_holder/*
+.vscode/*
 bert-base-uncased/*
 data_feature/*
 dataset/*
