@@ -75,8 +75,10 @@ def output_evaluate(ref,filename):
     test_ref=""
     for i in range(len(ref)):
         test_ref=test_ref+ref[i]+"\n"
-    test_ref_path=os.path.join("result","for_evaluate",filename+"_ref.txt")
-    with open(test_ref_path,'w',encoding='utf-8') as f:
+    test_ref_path=os.path.join("result","for_evaluate",filename)
+    if not os.path.isdir(test_ref_path):
+        os.makedirs(test_ref_path)
+    with open(test_ref_path+"_ref.txt",'w',encoding='utf-8') as f:
         f.write(test_ref)
 
 def predict_test_in_train_mode(input_ids,labels,logits):
