@@ -190,7 +190,7 @@ def convert_embedding_to_feature(data_path,data_type,token_embedding_id_list, se
     output = open("{0}/{1}_data_feature.pkl".format(data_path,data_type), "wb")
     pickle.dump(data_feature, output)
 
-def get_data_set(path):
+def get_datafeature(path):
     data = open(path, "rb")
     data_feature = pickle.load(data)
     input_id = data_feature["input_id"]
@@ -261,5 +261,35 @@ def produce_analysis_file(syntactic_keyword_list,ref_list,filnm):
     with open(output_file_path,'a',encoding='utf-8') as f:
         f.write(output_txt)
 
+
+def get_all_syntactic_keyword_list(syntactic_list,accepted_pos_list,tokenizer,nlp):
+    all_syntactic_keyword_list=[]
+    for syntactic_sentence in tqdm(syntactic_list):
+        syntactic_keyword_list=get_syntactic_keyword(syntactic_sentence,accepted_pos_list,tokenizer,nlp)
+        all_syntactic_keyword_list.append(syntactic_keyword_list)
+
+    return all_syntactic_keyword_list
+
+def get_syntactic_keyword(syntactic_sentence,accepted_pos_list,tokenizer,nlp):
+    syntactic_keyword_list=[]
+    doc = nlp(syntactic_sentence)
+    token_list=tokenizer.tokenize(syntactic_sentence)
+    for token in (doc):
+        # 檢查 keyword 也要在 token_list 裡的字，避免 BERT 預測是 UNK
+        if token.tag_ in accepted_pos_list and token.text in token_list:
+            syntactic_keyword_list.append(token.text)
+    # if len(syntactic_keyword_list)==0:
+    #     token_len=len(token_list)
+    #     rand_pos=random.randint(0,token_len-2)
+    #     syntactic_keyword_list.append(token_list[rand_pos])
+    return syntactic_keyword_list
+
+
+def get_token_list_position(token_list):
+    position_dict={}
+    for i,token in enumerate(token_list):
+        position_dict[i]=token
+    
+    return position_dict
 # if __name__ == "__main__":
 #     produce_compared_analysis_file(1,1,1)

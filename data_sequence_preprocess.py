@@ -5,8 +5,7 @@ import random
 from tqdm import tqdm
 from transformers import BertTokenizer
 from tools import get_dataset_list,get_accepted_pos_list,padding,convert_embedding_to_feature
-
-
+from tools import get_all_syntactic_keyword_list,get_syntactic_keyword
 
 
 def main():
@@ -62,27 +61,7 @@ def main():
 
     return 0
 
-def get_all_syntactic_keyword_list(syntactic_list,accepted_pos_list,tokenizer,nlp):
-    all_syntactic_keyword_list=[]
-    for syntactic_sentence in tqdm(syntactic_list):
-        syntactic_keyword_list=get_syntactic_keyword(syntactic_sentence,accepted_pos_list,tokenizer,nlp)
-        all_syntactic_keyword_list.append(syntactic_keyword_list)
 
-    return all_syntactic_keyword_list
-
-def get_syntactic_keyword(syntactic_sentence,accepted_pos_list,tokenizer,nlp):
-    syntactic_keyword_list=[]
-    doc = nlp(syntactic_sentence)
-    token_list=tokenizer.tokenize(syntactic_sentence)
-    for token in (doc):
-        # 檢查 keyword 也要在 token_list 裡的字，避免 BERT 預測是 UNK
-        if token.tag_ in accepted_pos_list and token.text in token_list:
-            syntactic_keyword_list.append(token.text)
-    # if len(syntactic_keyword_list)==0:
-    #     token_len=len(token_list)
-    #     rand_pos=random.randint(0,token_len-2)
-    #     syntactic_keyword_list.append(token_list[rand_pos])
-    return syntactic_keyword_list
 
 def insert_sep_token(all_syntactic_keyword_list):
     all_syntactic_keyword_with_sep_list=[]

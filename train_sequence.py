@@ -5,7 +5,7 @@ import datetime
 import argparse
 from tqdm import tqdm 
 import torch.nn as nn
-from tools import get_data_set,predict_test_in_train_mode,write_message
+from tools import get_datafeature,predict_test_in_train_mode,write_message
 from torch.utils.data import DataLoader
 from transformers import BertConfig,BertForMaskedLM,AdamW
 
@@ -40,10 +40,10 @@ def main():
         device = torch.device('cpu')
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-    train_dataset=get_data_set(args.train_file_path)
+    train_dataset=get_datafeature(args.train_file_path)
     train_dataloader=DataLoader(train_dataset,batch_size=args.batch_size,shuffle=True)
 
-    test_dataset=get_data_set(args.test_file_path)
+    test_dataset=get_datafeature(args.test_file_path)
     test_dataloader=DataLoader(test_dataset,batch_size=args.batch_size,shuffle=True)
 
     config = BertConfig.from_pretrained(pre_trained_model_name, type_vocab_size=2)

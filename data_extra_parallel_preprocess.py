@@ -6,7 +6,7 @@ from tqdm import tqdm
 from transformers import BertConfig
 from transformers import BertTokenizer
 from torch.utils.data import TensorDataset
-from tools import get_sentence_tag_dict,SEP_token_change,get_dataset_list
+from tools import get_sentence_tag_dict,SEP_token_change,get_dataset_list,get_token_list_position
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--train_file_path', '-trfp', type=str)
@@ -44,7 +44,7 @@ def extrapolate_syntactic(ori_syntactic_list,nlp):
         # ori_syntactic_sentence_token_position_dict=get_position(doc)
 
         token_list=tokenizer.tokenize(ori_syntactic_sentence)
-        ori_syntactic_sentence_token_position_dict=get_position(token_list)
+        ori_syntactic_sentence_token_position_dict=get_token_list_position(token_list)
         # 先取出spacy 的 token，以及留下來的位置
         # syntactic_token_position_dict,syntactic_token_position_with_empty_dict=spacy_tokened(doc,ignored_pos_list)
         # 改成留下不重要的字，留下句型結構
@@ -66,12 +66,7 @@ def extrapolate_syntactic(ori_syntactic_list,nlp):
         
     return syntactic_list_in_dict,part_maskLM_embedding_list_in_dict
 
-def get_position(token_list):
-    position_dict={}
-    for i,token in enumerate(token_list):
-        position_dict[i]=token
-    
-    return position_dict
+
 
 # 捨棄doc的tokenzier 避免造成BERT tokenzier.convert_tokens_to_ids 異常
 # 以結果來說 不能讓mask 的字是 [UNK]

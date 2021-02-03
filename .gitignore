@@ -3,7 +3,7 @@ __pycache__/*
 .model_holder/*
 .vscode/*
 bert-base-uncased/*
-data_feature/*
+datafeature/*
 dataset/*
 loss/*
 mingda_chen_dataset/*

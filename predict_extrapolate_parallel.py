@@ -10,7 +10,6 @@ from data_extra_preprocess_pos import get_pos_embedding,convert_tuple_to_dict,ge
 from data_extra_preprocess_pos import pos_match
 from transformers import BertConfig, BertForMaskedLM, BertTokenizer
 from transformers import AutoModelForMaskedLM,AutoConfig
-from train_pos_copy import POS_Model
 from tools import segment_embedding,attention_embedding,output_evaluate,embedding_padding
 
 # parser settings
@@ -166,8 +165,8 @@ def main():
     # 0 : base
     # 1 : pos
     model_num = 0
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-    device = torch.device("cuda")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    device = torch.device("cpu")
 
     ori_semantic_list,ori_syntactic_list=read_test_data()
     model = select_model(model_num)
