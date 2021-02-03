@@ -1,23 +1,45 @@
 import os
+import argparse
 import sacrebleu
 
+def main():
 
-def eva_bleu():
-    refs=[]
-    sys=[]
-    path=os.path.join("result","bleu_text.txt")
-    with open(path, "r", encoding='utf-8') as f:     
-        for line in f:
-            line_split_list=line.split('|||')
-            refs.append([line_split_list[0]])
-            sys.append(line_split_list[1])
-    bleu=sacrebleu.corpus_bleu(sys,refs)
+    ## 外部參數設定
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_file_path', '-i', type=str)
+    parser.add_argument('--ref_file_path', '-r', type=str)
+    args = parser.parse_args()
+
+    if args.input_file_path==None:
+        args.input_file_path="mingda_chen_dataset/dev_input.txt"
+    if args.ref_file_path==None:
+        args.ref_file_path="mingda_chen_dataset/dev_ref.txt"
+
+    ref,sys=read_data(args.input_file_path,args.ref_file_path)
+    eva_bleu(ref,sys)
+    
+
+def eva_bleu(ref,sys):
+   
+    bleu=sacrebleu.corpus_bleu(sys,ref)
     print(bleu.score)
     
-    return 0
 
-def main():
-    eva_bleu()
+def read_data(input_file_path,ref_file_path):
+    ref1=[]
+    ref2=[]
+    ref=[]
+    with open(input_file_path,"r",encoding='utf-8') as f:
+        for line in f:
+            ref1.append(line.split("\t")[0])
+            ref2.append(line.split("\t")[1].strip("\n"))
+        ref.append(ref1)
+        ref.append(ref2)
+    sys=[]
+    with open(ref_file_path,"r",encoding='utf-8') as f:
+        for line in f:
+            sys.append(line.strip("\n"))
+    return ref,sys
 
 
 
