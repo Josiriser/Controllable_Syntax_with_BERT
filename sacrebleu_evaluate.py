@@ -1,7 +1,6 @@
 import os
 import argparse
 import sacrebleu
-from transformers import BertTokenizer
 
 def main():
 
@@ -12,9 +11,9 @@ def main():
     args = parser.parse_args()
 
     if args.input_file_path==None:
-        args.input_file_path="mingda_chen_dataset/test_input.txt"
+        args.input_file_path="mingda_chen_dataset/test_ref.txt"
     if args.ref_file_path==None:
-        args.ref_file_path="mingda_chen_dataset/test_ref.txt"
+        args.ref_file_path="mingda_chen_dataset/mingda_test_predict.txt"
 
     ref,sys=read_data(args.input_file_path,args.ref_file_path)
     eva_bleu(ref,sys)
@@ -27,31 +26,19 @@ def eva_bleu(ref,sys):
     
 
 def read_data(input_file_path,ref_file_path):
-    tokenizer = BertTokenizer(vocab_file='bert-base-uncased-vocab.txt')
-    ref1=[]
-    ref2=[]
+
+    ref_temp=[]
     ref=[]
     with open(input_file_path,"r",encoding='utf-8') as f:
         for line in f:
+            ref_temp.append(line.strip("\n"))
+        ref.append(ref_temp)
 
-            ref1.append(token_process(line.split("\t")[0],tokenizer))
-            ref2.append(token_process(line.split("\t")[1].strip("\n"),tokenizer))
-        ref.append(ref1)
-        ref.append(ref2)
     sys=[]
     with open(ref_file_path,"r",encoding='utf-8') as f:
         for line in f:
             sys.append(line.strip("\n"))
     return ref,sys
-
-def token_process(sentence,tokenizer):
-    token_list = tokenizer.tokenize(sentence)
-    text=""
-    for token in token_list:
-        text=text+token+" "
-
-    return text
-
 
 if __name__ == "__main__":
     main()
